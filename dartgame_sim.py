@@ -1,6 +1,5 @@
 from PIL import Image, ImageDraw
-import time
-import math
+import time, random, math
 
 def calculateAreas_mm():
     ''' Calculate the areas each wedge will occupy - precursor to image. ''' 
@@ -25,23 +24,28 @@ class dartBoard:
     def __init__(self, mult):
         self.xmax = 340
         self.ymax = 340
-        self.mult = 2
+        self.mult = 1
         self.trueX = self.xmax*self.mult
         self.trueY = self.xmax*self.mult
         self.size = (self.trueX, self.trueY)
         self.board = Image.new("RGB", self.size, "black")
         self.draw = ImageDraw.Draw(self.board) 
-        self.arcLabels = [6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5, 20, 1, 18, 4, 13]
+        self.arcLabels = [6, 10, 15, 2, 17, 3, 19, 7, 16, \
+                          8, 11, 14, 9, 12, 5, 20, 1, 18, 4, 13]
+        random.seed(time.time())
 
-    def drawRad(self, rad):
+    def drawRad(self, rad, multiplier):
         wedgeArc = (int(self.trueX/2-(rad*self.mult)), 
                     int(self.trueY/2-(rad*self.mult)), 
                     int(self.trueX/2+(rad*self.mult)), 
                     int(self.trueY/2+(rad*self.mult)))
         for i in range(0, len(self.arcLabels)):
-            colStr = ','.join([str(i*18)]*3)
-            self.draw.pieslice(wedgeArc, (354+(18*i))%360, (354+(18*(i+1)))%360, fill="rgb("+colStr+")") 
-     
+            colStr = "rgb("+str(12*self.arcLabels[i])+", "+multiplier+",0)"
+            #colStr = ','.join([str(i*18)]*3)
+            #print 18*i, self.arcLabels[i]
+            self.draw.pieslice(wedgeArc, (351+(18*i))%360,
+                               (351+(18*(i+1)))%360, 
+                               fill=colStr) 
 
     def genDartBoard(self):
         inBullRad = 12.7 ## inner bullseye
@@ -54,15 +58,37 @@ class dartBoard:
                        int(self.trueY/2-(outBullRad*self.mult)/2), 
                        int(self.trueX/2+(outBullRad*self.mult)/2), 
                        int(self.trueY/2+(outBullRad*self.mult)/2))
-        fsRad = 99.4+(12.7/2)
-        self.drawRad(fsRad)
-
-        self.draw.ellipse(outBullBBox, fill="#00dd00")
-        self.draw.ellipse(inBullBBox, fill="#ff0000")
+        dblRad = 170
+        self.drawRad(dblRad, "2")
+        ssRad = 162
+        self.drawRad(ssRad, "1")
+        tripRad = 107.4
+        self.drawRad(tripRad, "3")
+        fsRad = 99.4
+        self.drawRad(fsRad, "1")
+        self.draw.ellipse(outBullBBox, fill="rgb(0, 2, 0)")
+        self.draw.ellipse(inBullBBox, fill="rgb(0, 1, 0)")
         
-        self.board.save("./output/"+str(time.time()).split(".")[0]+".BMP", "BMP")
 
+    def throwDart(self, tgt, pSkill):
+        ''' this simulates a throw of the dart at a tgt (x,y) with skill pSkill
+            pSkill will be utilized with the random.gauss function to identify
+            how often the player hits the target they are aiming for '''
+        hitX = int(tgt[0]+random.gauss(pSkill[0], pSkill[1]))
+        hitY = int(tgt[1]+random.gauss(pSkill[0], pSkill[1]))
+        if(hitX<self.trueX) and (hitX>0) and (hitY<self.trueY) and (hitY>0):
+            hit = (hitX, hitY)
+            r,g,b = self.board.getpixel(hit)
+            if(b<247):
+                self.board.putpixel(hit, (r, g, b+30))
+            return(r/12, g)
+        
+    def saveBoard(self):
+        self.board.save("./output/"+str(time.time()).split(".")[0]+".BMP", "BMP")
 
 if(__name__=="__main__"):
     db = dartBoard(2)
-    db.genDartBoard() 
+    db.genDartBoard()
+    for i in range(1000):
+        db.throwDart((170, 170), (20, 169))
+    db.saveBoard()

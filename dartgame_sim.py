@@ -67,8 +67,8 @@ class dartBoard:
         self.drawRad(tripRad, "3")
         fsRad = 99.4
         self.drawRad(fsRad, "1")
-        self.draw.ellipse(outBullBBox, fill="rgb(0, 2, 0)")
-        self.draw.ellipse(inBullBBox, fill="rgb(0, 1, 0)")
+        self.draw.ellipse(outBullBBox, fill="rgb(0, 1, 0)")
+        self.draw.ellipse(inBullBBox, fill="rgb(0, 2, 0)")
         
 
     def throwDart(self, tgt, pSkill):
@@ -85,6 +85,7 @@ class dartBoard:
             r,g,b = self.board.getpixel(hit)
             if(b<247):
                 self.board.putpixel(hit, (r, g, b+30))
+            #print hitX,hitY 
             return(r/12, g)
         
     def saveBoard(self):
@@ -98,36 +99,62 @@ class dartBoard:
         valueAngles = [[15,2], [17,4], [19,6], [16,8], [20,15],[18,17]]
         angleDict = dict()
         for k in valueAngles:
-            angleDict[k[0]] = 9+(18*k[1])
-        print angleDict
+            angleDict[k[0]] = (18*k[1])
+        #print angleDict
         return(int(math.cos(math.radians(angleDict[aimVal]))*103.4*self.mult)+self.trueX/2, 
                int(math.sin(math.radians(angleDict[aimVal]))*103.4*self.mult)+self.trueY/2)
- 
 
+
+def evalScore(scoreD):
+    ''' returns sum of a dict; should be 21 for a win. '''
+    tSum = 0
+    for i in scoreD:
+        if(scoreD[i]>3):
+            tSum+=3
+        else:
+            tSum+=scoreD[i]
+    return(tSum)
+
+def initScoreDict(): 
+    scoreDict = dict()
+    for i in range(15,21):
+        scoreDict[i] = 0
+    scoreDict[0] = 0
+    return(scoreDict)
+ 
 if(__name__=="__main__"):
     db = dartBoard(2)
     db.genDartBoard()
-
-    print db.retAimPoint(0)
-    for i in range(15, 21):
-        print db.retAimPoint(i)  
-
-    exit()
+    skill = (20, 100)
+    #skill = (0,0)
     ## Generic Strategy:
     ##  Throw the darts at the bullseye, anything that you hit, you take.
-    scoreDict = dict()
-    for i in range(15,22):
-        scoreDict[i] = 0
-    scoreDict[0] = 0
+    scoreDict = initScoreDict()
+    print "Generic Strategy: Bullseye Targeting"
     print scoreDict
 
     shotCount = 0
     while(scoreDict[0]<3):
-        t = db.throwDart((170, 170), (20, 100))
+        t = db.throwDart(db.retAimPoint(0), skill)
         if(t!=None) and (t[0] in scoreDict):
             scoreDict[t[0]] += t[1]
-            print t#, scoreDict
+            #print evalScore(scoreDict),
+            #print t#, scoreDict
         shotCount+=1
-    print shotCount
-    print scoreDict
+    if(evalScore(scoreDict)<21):
+        print "Evasive action!"
+    print shotCount, scoreDict
+
+    print "Gentlemen's Strategy: 20-15, then Bulls"
+    gentStrat = initScoreDict()
+    print gentStrat
+    shotCount = 0
+    for i in [20,19,18,17,16,15,0]:
+        while(gentStrat[i]<3):
+            t = db.throwDart(db.retAimPoint(i), skill)
+            #print i, db.retAimPoint(i), t
+            if(t!=None) and (t[0]==i):
+                gentStrat[t[0]] += t[1]
+            shotCount+=1
+    print shotCount, gentStrat
     #db.saveBoard()

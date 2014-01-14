@@ -48,6 +48,7 @@ class dartBoard:
                                fill=colStr) 
 
     def genDartBoard(self):
+        ''' Draws a board with RGB = {value, multiplier, extra} '''
         inBullRad = 12.7 ## inner bullseye
         inBullBBox = (int(self.trueX/2-(inBullRad*self.mult)/2), 
                       int(self.trueY/2-(inBullRad*self.mult)/2), 
@@ -73,7 +74,10 @@ class dartBoard:
     def throwDart(self, tgt, pSkill):
         ''' this simulates a throw of the dart at a tgt (x,y) with skill pSkill
             pSkill will be utilized with the random.gauss function to identify
-            how often the player hits the target they are aiming for '''
+            how often the player hits the target they are aiming for 
+            Arguments are an x,y target and a tuple (a,g) of average distance 
+            away and total allowable distance from target.
+        '''
         hitX = int(tgt[0]+random.gauss(pSkill[0], pSkill[1]))
         hitY = int(tgt[1]+random.gauss(pSkill[0], pSkill[1]))
         if(hitX<self.trueX) and (hitX>0) and (hitY<self.trueY) and (hitY>0):
@@ -86,9 +90,44 @@ class dartBoard:
     def saveBoard(self):
         self.board.save("./output/"+str(time.time()).split(".")[0]+".BMP", "BMP")
 
+    def retAimPoint(self, aimVal):
+        if(aimVal!=0) and ((aimVal<15) and (aimVal>20)):
+            raise ValueError(str(aimVal)+" is not a valid target.")
+        if(aimVal==0):
+            return(self.trueX/2, self.trueY/2)
+        valueAngles = [[15,2], [17,4], [19,6], [16,8], [20,15],[18,17]]
+        angleDict = dict()
+        for k in valueAngles:
+            angleDict[k[0]] = 9+(18*k[1])
+        print angleDict
+        return(int(math.cos(math.radians(angleDict[aimVal]))*103.4*self.mult)+self.trueX/2, 
+               int(math.sin(math.radians(angleDict[aimVal]))*103.4*self.mult)+self.trueY/2)
+ 
+
 if(__name__=="__main__"):
     db = dartBoard(2)
     db.genDartBoard()
-    for i in range(1000):
-        db.throwDart((170, 170), (20, 169))
-    db.saveBoard()
+
+    print db.retAimPoint(0)
+    for i in range(15, 21):
+        print db.retAimPoint(i)  
+
+    exit()
+    ## Generic Strategy:
+    ##  Throw the darts at the bullseye, anything that you hit, you take.
+    scoreDict = dict()
+    for i in range(15,22):
+        scoreDict[i] = 0
+    scoreDict[0] = 0
+    print scoreDict
+
+    shotCount = 0
+    while(scoreDict[0]<3):
+        t = db.throwDart((170, 170), (20, 100))
+        if(t!=None) and (t[0] in scoreDict):
+            scoreDict[t[0]] += t[1]
+            print t#, scoreDict
+        shotCount+=1
+    print shotCount
+    print scoreDict
+    #db.saveBoard()

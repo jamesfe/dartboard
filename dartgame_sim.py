@@ -121,6 +121,9 @@ def initScoreDict():
         scoreDict[i] = 0
     scoreDict[0] = 0
     return(scoreDict)
+
+def playBullseyeGame():
+    pass
  
 if(__name__=="__main__"):
     db = dartBoard(2)

@@ -20,7 +20,6 @@ def calculateAreas_mm():
     print innerBulls, outerBulls, trebleWedge, doubleWedge, singleWedge
 
 class dartBoard:
-
     def __init__(self, mult):
         self.xmax = 340
         self.ymax = 340
@@ -122,42 +121,81 @@ def initScoreDict():
     scoreDict[0] = 0
     return(scoreDict)
 
-def playBullseyeGame():
-    pass
- 
-if(__name__=="__main__"):
-    db = dartBoard(2)
-    db.genDartBoard()
-    skill = (20, 100)
-    #skill = (0,0)
+def playBullseyeGame(dboard, skill):
     ## Generic Strategy:
     ##  Throw the darts at the bullseye, anything that you hit, you take.
     scoreDict = initScoreDict()
-    print "Generic Strategy: Bullseye Targeting"
-    print scoreDict
+    #print "Generic Strategy: Bullseye Targeting"
+    #print scoreDict
 
     shotCount = 0
     while(scoreDict[0]<3):
-        t = db.throwDart(db.retAimPoint(0), skill)
+        #print evalScore(scoreDict)
+        t = dboard.throwDart(dboard.retAimPoint(0), skill)
         if(t!=None) and (t[0] in scoreDict):
             scoreDict[t[0]] += t[1]
             #print evalScore(scoreDict),
             #print t#, scoreDict
         shotCount+=1
-    if(evalScore(scoreDict)<21):
-        print "Evasive action!"
-    print shotCount, scoreDict
+    #print scoreDict
+    while(evalScore(scoreDict)<21):
+        for t in scoreDict:
+            if(scoreDict[t]<3):
+                t2 = dboard.throwDart(dboard.retAimPoint(t), skill)
+                shotCount+=1
+                if(t2!=None) and (t2[0] in scoreDict):
+                    scoreDict[t2[0]] += t2[1]
+    #if(evalScore(scoreDict)<21):
+    #    print "Evasive action!"
+    #print shotCount, scoreDict
+    return(shotCount, evalScore(scoreDict))
 
-    print "Gentlemen's Strategy: 20-15, then Bulls"
+def playGentlemansGame(dboard, skill):
+    #print "Gentlemen's Strategy: 20-15, then Bulls"
     gentStrat = initScoreDict()
-    print gentStrat
+    #print gentStrat
     shotCount = 0
     for i in [20,19,18,17,16,15,0]:
         while(gentStrat[i]<3):
-            t = db.throwDart(db.retAimPoint(i), skill)
+            t = dboard.throwDart(dboard.retAimPoint(i), skill)
             #print i, db.retAimPoint(i), t
             if(t!=None) and (t[0]==i):
                 gentStrat[t[0]] += t[1]
             shotCount+=1
-    print shotCount, gentStrat
-    #db.saveBoard()
+    #print shotCount, gentStrat
+    return(shotCount, evalScore(gentStrat))
+ 
+def playGreedyGame(dboard, skill):
+    #print "Gentlemen's Strategy: 20-15, then Bulls"
+    gentStrat = initScoreDict()
+    #print gentStrat
+    shotCount = 0
+    for i in [20,19,18,17,16,15,0]:
+        while(gentStrat[i]<3):
+            t = dboard.throwDart(dboard.retAimPoint(i), skill)
+            #print i, db.retAimPoint(i), t
+            if(t!=None) and (t[0] in gentStrat):
+                gentStrat[t[0]] += t[1]
+            shotCount+=1
+    #print shotCount, gentStrat
+    return(shotCount, evalScore(gentStrat))
+
+if(__name__=="__main__"):
+    db = dartBoard(2)
+    db.genDartBoard()
+    skill = (20, 100)
+    #skill = (0,0)
+  
+    for k in range(15, 150, 2):
+        skill = (30, k)
+        bulls = []
+        gents = [] 
+        greedy = []
+        for i in range(0, 100):
+            bulls.append(playBullseyeGame(db, skill)[0])
+            gents.append(playGentlemansGame(db, skill)[0])
+            greedy.append(playGreedyGame(db, skill)[0])
+        print k, sum(bulls)/len(bulls),
+        print sum(gents)/len(gents),
+        print sum(greedy)/len(greedy)
+   #db.saveBoard()
